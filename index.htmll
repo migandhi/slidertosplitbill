@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Splitter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .person {
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        input[type="number"], input[type="range"] {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bill Splitter</h1>
+    <div>
+        <label for="totalBill">Total Bill: $</label>
+        <input type="number" id="totalBill" min="0" step="0.01">
+    </div>
+    <div id="peopleContainer"></div>
+    <button onclick="addPerson()">Add Person</button>
+    <div id="result"></div>
+
+    <script>
+        let people = [];
+
+        function addPerson() {
+            const id = Date.now();
+            people.push({ id, percentage: 100 / (people.length + 1) });
+            updateUI();
+        }
+
+        function updatePercentage(id, value) {
+            const person = people.find(p => p.id === id);
+            person.percentage = parseFloat(value);
+            normalizePercentages();
+            updateUI();
+        }
+
+        function normalizePercentages() {
+            const total = people.reduce((sum, person) => sum + person.percentage, 0);
+            people.forEach(person => person.percentage = (person.percentage / total) * 100);
+        }
+
+        function removePerson(id) {
+            people = people.filter(person => person.id !== id);
+            normalizePercentages();
+            updateUI();
+        }
+
+        function updateUI() {
+            const container = document.getElementById('peopleContainer');
+            container.innerHTML = '';
+            people.forEach(person => {
+                const personDiv = document.createElement('div');
+                personDiv.className = 'person';
+                personDiv.innerHTML = `
+                    <input type="range" min="0" max="100" step="0.01" value="${person.percentage.toFixed(2)}" 
+                           id="slider-${person.id}">
+                    <span id="percentage-${person.id}">${person.percentage.toFixed(2)}%</span>
+                    <button onclick="removePerson(${person.id})">Remove</button>
+                `;
+                container.appendChild(personDiv);
+
+                const slider = document.getElementById(`slider-${person.id}`);
+                slider.addEventListener('input', function() {
+                    updatePercentage(person.id, this.value);
+                });
+            });
+            calculateSplitBill();
+        }
+
+        function calculateSplitBill() {
+            const totalBill = parseFloat(document.getElementById('totalBill').value) || 0;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<h2>Split Result:</h2>';
+            people.forEach(person => {
+                const amount = (person.percentage / 100) * totalBill;
+                resultDiv.innerHTML += `<p>Person ${people.indexOf(person) + 1}: $${amount.toFixed(2)}</p>`;
+            });
+        }
+
+        document.getElementById('totalBill').addEventListener('input', calculateSplitBill);
+
+        // Initialize with one person
+        addPerson();
+    </script>
+</body>
+</html>
